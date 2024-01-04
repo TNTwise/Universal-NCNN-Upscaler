@@ -16,3 +16,6 @@
 ## Animation
  - <a href="https://github.com/TNTwise/Upscaling-Models-NCNN/releases/tag/Animation">Download NCNN</a>
  - <a href="https://openmodeldb.info/models/2x-sudo-RealESRGAN">sudo-RealESRGAN (2X)</a> by styler00dollar
+ - <a href="https://openmodeldb.info/models/2x-AniScale-2-Compact">AniScale-2-Compact (2X)</a> by Sirosky
+ - <a href="https://openmodeldb.info/models/2x-AnimeJaNai-v2-Compact">AnimeJaNai-v2-Compact (2X)</a> by the database
+ 
