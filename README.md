@@ -13,6 +13,7 @@
  - <a href="https://openmodeldb.info/models/4x-LSDIRPlusR">4xLSDIRPlusR (4X)</a> by Helaman
  - <a href="https://openmodeldb.info/models/4x-LSDIRPlusC">4xLSDIRPlusC (4X)</a> by Helaman
  - <a href="https://openmodeldb.info/models/4x-LSDIRPlusN">4xLSDIRPlusN (4X)</a> by Helaman
+ - <a href="https://openmodeldb.info/models/4x-Nomos8kSC">Nomos8kSC (4X)</a> by Helaman
 ## Animation
  - <a href="https://github.com/TNTwise/Upscaling-Models-NCNN/releases/tag/Animation">Download NCNN</a>
  - <a href="https://openmodeldb.info/models/2x-sudo-RealESRGAN">sudo-RealESRGAN (2X)</a> by styler00dollar
