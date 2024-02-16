@@ -148,8 +148,7 @@ if(NOT USE_SYSTEM_NCNN)
     option(NCNN_DISABLE_RTTI "" ON)
     option(NCNN_DISABLE_EXCEPTION "" ON)
 
-    
-        option(WITH_LAYER_absval "" ON)
+    option(WITH_LAYER_absval "" ON)
     option(WITH_LAYER_argmax "" ON)
     option(WITH_LAYER_batchnorm "" ON)
     option(WITH_LAYER_bias "" ON)
