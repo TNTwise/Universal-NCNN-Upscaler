@@ -1,49 +1,27 @@
-# Installation:
-
-### Prerequisites:
-
-- `cmake`
-- `gcc-9` and `g++-9`
-- `Vulkan SDK`
-  - Download a Vulkan SDK tarball from [https://vulkan.lunarg.com/sdk/home](https://vulkan.lunarg.com/sdk/home) and extract it using:\
-     `tar -xf vulkansdk-linux-x86_64-1.3.261.0.tar.xz`
-
-### Steps:
-
-1. Clone the repository with all submodules (requires an SSH key be added to your account):
-
-   `git clone --recursive git@github.com:upscayl/upscayl-ncnn.git`
-
-   `cd upscayl-ncnn`
-
-2. Set up environment variables: `export CC="gcc-9" CXX="g++-9" `
-3. `export VULKAN_SDK=/path` where you extracted your vulkan SDK/1.3.261.0/x86_64
-4. Make a new build directory and cd into it: `mkdir build && cd build`
-5. Now, build : `cmake ../src`
-6. `cmake --build . -j 2` Replace the `-j 2` with the number of cores you want to use to compile
-
-## MacOS
-
-### Prerequisites:
-
-- openmp installed, install with `brew install libomp`
-- cmake installed, install with `brew install cmake`
-- Install VulkanSDK from the website and it should be in /Users/youruser/VulkanSDK/`<version>` normally if you did not change anything
-
-### Steps:
-
-After making the build directory, open it and use the following cmake command (replace the paths from your system)
-
-```bash
-mkdir build-x86_64 && cd build-x86_64
-cmake -D USE_STATIC_MOLTENVK=ON -D CMAKE_OSX_ARCHITECTURES="x86_64" -D OpenMP_C_FLAGS="-Xclang -fopenmp" -D OpenMP_CXX_FLAGS="-Xclang -fopenmp" -D OpenMP_C_LIB_NAMES="libomp" -D OpenMP_CXX_LIB_NAMES="libomp" -D OpenMP_libomp_LIBRARY="/opt/homebrew/opt/libomp/lib/libomp.a" -D Vulkan_INCLUDE_DIR="./VulkanSDK/*/MoltenVK/include" -D Vulkan_LIBRARY=./VulkanSDK/*/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/libMoltenVK.a ../src
-cmake --build . -j 8
-```
-
-For arm processors, the build command will only change to
-
-```bash
-mkdir build-arm64 && cd build-arm64
-cmake -D USE_STATIC_MOLTENVK=ON -D CMAKE_OSX_ARCHITECTURES="arm64" -D CMAKE_CROSSCOMPILING=ON -D CMAKE_SYSTEM_PROCESSOR=arm64 -D OpenMP_C_FLAGS="-Xclang -fopenmp" -D OpenMP_CXX_FLAGS="-Xclang -fopenmp -I/opt/homebrew/opt/libomp/include" -D OpenMP_C_LIB_NAMES="libomp" -D OpenMP_CXX_LIB_NAMES="libomp" -D OpenMP_libomp_LIBRARY="/opt/homebrew/opt/libomp/lib/libomp.a" -D Vulkan_INCLUDE_DIR="../VulkanSDK/1.3.261.1/MoltenVK/include" -D Vulkan_LIBRARY="../VulkanSDK/1.3.261.1/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/libMoltenVK.a" ../src
-cmake --build . -j 8
-```
+# Upscaling-Models-NCNN
+## A repo of models converted to NCNN
+ - Model conversion types supported:
+ - ESRGAN (ESRGAN, ESRGAN+, "new-arch ESRGAN" (RealSR, BSRGAN), SPSR, and Real-ESRGAN) Models. Converted by <a href="https://github.com/chaiNNer-org/chaiNNer">chaiNNer</a>
+ - Compact Models
+ - SPAN Models
+## General Models:
+ - <a href="https://github.com/TNTwise/Upscaling-Models-NCNN/releases/tag/General">Download NCNN</a>
+ - <a href="https://github.com/cszn/KAIR/releases/tag/v1.0">BSRGAN (2X)</a>
+## Realistic Models:  
+ - <a href="https://github.com/TNTwise/Upscaling-Models-NCNN/releases/tag/Realistic">Download NCNN</a>
+ - <a href="https://openmodeldb.info/models/4x-LSDIR">4xLSDIR (4X)</a> by Helaman
+ - <a href="https://openmodeldb.info/models/4x-LSDIRPlus">4xLSDIRPlus (4X)</a> by Helaman
+ - <a href="https://openmodeldb.info/models/4x-LSDIRPlusR">4xLSDIRPlusR (4X)</a> by Helaman
+ - <a href="https://openmodeldb.info/models/4x-LSDIRPlusC">4xLSDIRPlusC (4X)</a> by Helaman
+ - <a href="https://openmodeldb.info/models/4x-LSDIRPlusN">4xLSDIRPlusN (4X)</a> by Helaman
+ - <a href="https://openmodeldb.info/models/4x-Nomos8kSC">Nomos8kSC (4X)</a> by Helaman
+ - <a href="https://openmodeldb.info/models/4x-NMKD-Siax-CX">NMKD Siax (4X)</a> by NMKD
+ - <a href="https://openmodeldb.info/models/4x-ClearRealityV1">ClearRealityV1 (4X)</a> by Kim2091
+ - <a href="https://openmodeldb.info/models/4x-ClearRealityV1">ClearRealityV1-Soft (4X)</a> by Kim2091
+## Animation
+ - <a href="https://github.com/TNTwise/Upscaling-Models-NCNN/releases/tag/Animation">Download NCNN</a>
+ - <a href="https://openmodeldb.info/models/2x-sudo-RealESRGAN">sudo-RealESRGAN (2X)</a> by styler00dollar/sudo
+ - <a href="https://openmodeldb.info/models/2x-sudo-shuffle-cugan-9-584-969">sudo-shuffle-CUGAN (2X)</a> by styler00dollar/sudo
+ - <a href="https://openmodeldb.info/models/2x-AniScale-2-Compact">AniScale-2-Compact (2X)</a> by Sirosky
+ - <a href="https://openmodeldb.info/models/2x-AnimeJaNai-v2-Compact">AnimeJaNai-v2-Compact (2X)</a> by the database
+ 
