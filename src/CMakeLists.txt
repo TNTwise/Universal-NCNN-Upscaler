@@ -243,7 +243,17 @@ if(NOT USE_SYSTEM_NCNN)
     option(WITH_LAYER_deconvolutiondepthwise3d "" ON)
     option(WITH_LAYER_einsum "" ON)
     option(WITH_LAYER_deformableconv2d "" ON)
-
+    option(WITH_LAYER_glu "" ON)
+    option(WITH_LAYER_fold "" ON)
+    option(WITH_LAYER_unfold "" ON)
+    option(WITH_LAYER_gridsample "" ON)
+    option(WITH_LAYER_cumulativesum "" ON)
+    option(WITH_LAYER_copyto "" ON)
+    option(WITH_LAYER_erf "" ON)
+    option(WITH_LAYER_diag "" ON)
+    option(WITH_LAYER_celu "" ON)
+    option(WITH_LAYER_shrink "" ON)
+    
     add_subdirectory(ncnn)
 endif()
 
