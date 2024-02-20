@@ -25,35 +25,11 @@
  - <a href="https://openmodeldb.info/models/2x-AniScale-2-Compact">AniScale-2-Compact (2X)</a> by Sirosky
  - <a href="https://openmodeldb.info/models/2x-AnimeJaNai-v2-Compact">AnimeJaNai-v2-Compact (2X)</a> by the database
 
-# SPAN-ncnn-vulkan
-### Custom models:
-- <a href="https://openmodeldb.info/models/4x-ClearRealityV1">ClearRealityV1 (4X)</a> by Kim2091
-- <a href="https://github.com/terrainer/AI-Upscaling-Models/tree/main/4xSPANkendata">SPANkendata (4X)</a> by terrainer
-- <a href="https://openmodeldb.info/models/2x-span-anime-pretrain">2x-span-anime-pretrain (2X)</a> by Kim2091
-- <a href="https://github.com/Phhofm/models"> 2xHFA2kSpan (2x)</a> by Phhofm
-- <a href="https://openmodeldb.info/models/4x-Nomos8k-span-otf-strong"> 4x-Nomos8k-span-otf-strong (4x)</a> by Helaman
-- <a href="https://openmodeldb.info/models/4x-Nomos8k-span-otf-medium"> 4x-Nomos8k-span-otf-medium (4x)</a> by Helaman
-- <a href="https://openmodeldb.info/models/4x-Nomos8k-span-otf-weak"> 4x-Nomos8k-span-otf-weak (4x)</a> by Helaman <br/>
 
 
-ncnn implementation of SPAN, Swift Parameter-free Attention Network for Efficient Super-Resolution
-
-span-ncnn-vulkan uses [ncnn project](https://github.com/Tencent/ncnn) as the universal neural network inference framework.
 
 
-Download Windows/Linux/MacOS Executable for Intel/AMD/Nvidia GPU
 
-**https://github.com/tntwise/span-ncnn-vulkan/releases**
-
-This package includes all the binaries and models required. It is portable, so no CUDA or PyTorch runtime environment is needed :)
-
-## About SPAN
-
-SPAN (Swift Parameter-free Attention Network for Efficient Super-Resolution)
-
-https://github.com/hongyuanyu/SPAN
-
-Cheng Wan Hongyuan Yu Zhiqi Li Yihang Chen Yajun Zou Yuqing Liu Xuanwu Yin Kunlong Zu
 
 
 ## Usages
