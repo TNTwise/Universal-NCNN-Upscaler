@@ -34,18 +34,18 @@
 
 ## Usages
 
-Input one image, output one upscaled frame image.
-
+Input one image, output one upscaled frame image.<br/>
+Place bin/param file in models folder, then use command to upscale.
 ### Example Commands
 
 ```shell
-./span-ncnn-vulkan -m models/ -n 4xLSDIR -s 4 -i 0.jpg  -o 01.jpg
-./span-ncnn-vulkan -m models/ -n 4xLSDIR -s 4 -i input_frames/ -o output_frames/
+./upscayl-bin -m models/ -n 4xLSDIR -s 4 -i 0.jpg  -o 01.jpg
+./upscayl-bin -m models/ -n 4xLSDIR -s 4 -i input_frames/ -o output_frames/
 ```
 
 Example below runs on CPU, Discrete GPU, and Integrated GPU all at the same time. Uses 2 threads for image decoding, 4 threads for one CPU worker, 4 threads for another CPU worker, 2 threads for discrete GPU, 1 thread for integrated GPU, and 4 threads for image encoding.
 ```shell
-./span-ncnn-vulkan -m models/ -n 4xLSDIR -s 4 -i input_frames/ -o output_frames/ -g -1,-1,0,1 -j 2:4,4,2,1:4
+./upscayl-bin -m models/ -n 4xLSDIR -s 4 -i input_frames/ -o output_frames/ -g -1,-1,0,1 -j 2:4,4,2,1:4
 ```
 
 ### Video Upscaling with FFmpeg
@@ -73,7 +73,7 @@ ffmpeg -framerate 24 -i output_frames/%08d.png -i audio.m4a -c:a copy -crf 20 -c
 ### Full Usages
 
 ```console
-Usage: span-ncnn-vulkan -i infile -o outfile [options]...
+Usage: upscayl-bin -i infile -o outfile [options]...
 
   -h                   show this help
   -i input-path        input image path (jpg/png/webp) or directory
