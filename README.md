@@ -34,7 +34,7 @@
 
 
 ## Usages
-
+### Based on upscayl-bin.
 Input one image, output one upscaled frame image.<br/>
 Place bin/param file in models folder, then use command to upscale.
 ### Example Commands
