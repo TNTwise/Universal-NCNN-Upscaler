@@ -333,9 +333,9 @@ with torch.inference_mode():
     torch.onnx.export(
         model,
         torch.rand(1, 3, 256, 256),
-        "onnx/pro-denoise3x-up2x.onnx",
+        "pro-denoise3x-up2x.onnx",
         verbose=False,
-        opset_version=11,
+        opset_version=9,
         input_names=["input"],
         output_names=["output"],
         
