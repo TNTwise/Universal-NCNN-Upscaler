@@ -10,16 +10,73 @@ from basicsr.archs.arch_util import trunc_normal_
 from typing import Sequence, Literal, Optional
 from functools import partial
 
+import torch
 
+def custom_repeat(tensor, *sizes):
+    """
+    Repeats the input tensor along the specified dimensions.
+    
+    Args:
+        tensor (Tensor): The input tensor to be repeated.
+        *sizes (int or tuple of ints): The number of times to repeat the tensor along each dimension.
+                If a single integer is provided, it is treated as the number of repetitions for all dimensions.
+                If a tuple of integers is provided, each integer specifies the number of repetitions for a particular dimension.
+    
+    Returns:
+        Tensor: The repeated tensor.
+    """
+    # Convert the input tensor to a list of tensors, each representing a dimension
+    tensor_list = tensor.unsqueeze(0).unbind(0)
+    
+    # Repeat each tensor in the list along its dimension based on the provided sizes
+    repeated_list = []
+    for dim_tensor, dim_size in zip(tensor_list, sizes):
+        repeated_list.append(dim_tensor.repeat(dim_size))
+    
+    # Concatenate the repeated tensors along a new dimension
+    repeated_tensor = torch.stack(repeated_list, dim=0)
+    
+    # Permute the dimensions to restore the original order
+    permute_indices = list(range(1, repeated_tensor.ndim)) + [0]
+    repeated_tensor = repeated_tensor.permute(permute_indices)
+    
+    return repeated_tensor
+def custom_repeat_tensor(x, n):
+    """
+    Repeats the input tensor 'x' along the third dimension 'n' times, without using the torch.repeat method.
+
+    Args:
+        x (Tensor): The input tensor to be repeated.
+        n (int): The number of times to repeat the tensor along the third dimension.
+
+    Returns:
+        Tensor: The repeated tensor.
+    """
+    # Get the original shape of the tensor
+    original_shape = x.shape
+
+    # Calculate the new shape after repetition
+    new_shape = (original_shape[0],
+                 original_shape[1],
+                 original_shape[2] * n,
+                 original_shape[3],
+                 original_shape[4])
+
+    # Reshape the tensor to a flattened 3D tensor
+    flattened_tensor = x.reshape(-1, original_shape[2], original_shape[3] * original_shape[4])
+
+    # Create a new tensor with the repeated elements
+    repeated_flattened = torch.cat([flattened_tensor for _ in range(n)], dim=1)
+
+    # Reshape the repeated tensor to the new shape
+    repeated_tensor = repeated_flattened.reshape(new_shape)
+
+    return repeated_tensor
 # Since Pytorch's interleave is not supported by CoreML, we use this function instead for mobile conversion
 def repeat_interleave(x, n):
-    
     x = x.unsqueeze(2)
-    print(x.shape)
-    x = x.repeat(1, 1, n, 1, 1)
-    print(x.shape)
-    x = x.reshape(x.shape[0], 12, x.shape[3], x.shape[4])
-    print(x.shape)
+    x = custom_repeat_tensor(x, n)
+    x = x.reshape(x.shape[0], x.shape[1] * n, x.shape[3], x.shape[4])
     return x
 
 
@@ -67,9 +124,11 @@ class PLKConv2d(nn.Module):
         self.is_convert = False
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.is_convert:
-            x[:, :self.idx] = self.conv(x[:, :self.idx])
-            return x
+        x1 = x[:, :self.idx, :, :]
+        x2 = x[:, self.idx:, :, :]
+        x1 = self.conv(x1)
+        x = torch.cat([x1, x2], dim=1)
+        return x
             
         if self.training:
             x1, x2 = torch.split(x, [self.idx, x.size(1) - self.idx], dim=1)
@@ -345,8 +404,7 @@ class PLKSR(nn.Module):
         
         self.repeat_op = partial(
             repeat_interleave, n=upscaling_factor ** 2
-        )
-        self.repeat_op = partial(
+        ) if is_coreml else partial(
             torch.repeat_interleave, repeats=upscaling_factor ** 2, dim=1
         )
         
@@ -379,8 +437,8 @@ if __name__ == '__main__':
     # test_size = 'FHD'
     # test_size = '4K'
 
-    height = 720 if test_size == 'HD' else 1080 if test_size == 'FHD' else 2160
-    width = 1280 if test_size == 'HD' else 1920 if test_size == 'FHD' else 3840
+    height = 256
+    width = 256
     upsampling_factor = 2
     batch_size = 1
 
@@ -393,34 +451,26 @@ if __name__ == '__main__':
         'split_ratio': 0.25,
         'lk_type': 'PLK',
         'use_ea': True,
-        # 'is_coreml': True,
+        'is_coreml': True,
     }
     shape = (batch_size, 3, height // upsampling_factor, width // upsampling_factor)
     model = PLKSR(**model_kwargs)
-
-    state_dict = torch.load('PLKSR_X2_DF2K.pth', map_location="cpu")  
-    state_dict = state_dict['params']
-    model.load_state_dict(state_dict,strict=True)
-    with torch.inference_mode():
-        for m in model.modules():
-            if isinstance(m, (PLKConv2d, SparsePLKConv2d)):
-                m.forward = partial(pconv_forward_for_coreml, m)
-        mod = torch.jit.trace( model,
-            torch.rand(1, 3, 20, 20))
-        mod.save('plksr.pt')
+    x = torch.rand(1,3,256,256)
+    
+    state_dict = torch.load('PLKSR_X2_DF2K.pth')
+    model.eval()
+    model.load_state_dict(state_dict['params'], strict=True)
+    
+    with torch.no_grad():
         torch.onnx.export(
             model,
-            torch.rand(1, 3, 20, 20),
-            'plksr.onnx',
-            verbose=False,
+            x,
+            '2x_plksr.onnx',
             opset_version=11,
-            input_names=["input"],
-            output_names=["output"],
-            #dynamic_axes={
-            #        "input": {0: "batch_size", 2: "width", 3: "height"},
-            #        "output": {0: "batch_size", 2: "width", 3: "height"},
-            #    }
-    )
+            do_constant_folding=True,
+            input_names=['data'],
+            output_names=['output']
+        )
     """ Check Reparam """
     # print(model)
     # import tqdm
@@ -455,9 +505,7 @@ if __name__ == '__main__':
     #     print(model)
 
     """ Convert Rep """
-    for module in model.modules():
-        if hasattr(module, 'convert'):
-            module.convert()
+    
 
     """ measure metrics """
     test_direct_metrics(model, shape)
@@ -471,23 +519,18 @@ if __name__ == '__main__':
     # import os
 
     """ Mobile Conversion """
-    # x = torch.FloatTensor(batch_size, 3, 96, 96).uniform_(0, 1).type(torch.float32).clamp(0., 1.)
+    x = torch.FloatTensor(batch_size, 3, 96, 96).uniform_(0, 1).type(torch.float32).clamp(0., 1.)
+    import os
+    os.makedirs("./mlmodels", exist_ok=True)
+    model.eval()
+    model = model.cuda()
+    x = x.cuda()
+    print(x.shape)
     
-    # os.makedirs("./mlmodels", exist_ok=True)
-    # model.eval()
-    # model = model.cuda()
-    # x = x.cuda()
-    # print(x.shape)
+    convert_plk_forward_for_coreml(model)
     
-    # convert_plk_forward_for_coreml(model)
-    
-    # with torch.no_grad():
-    #     traced_model = torch.jit.trace(model, x)
-    #     out = traced_model(x)
-        
-    #     mlmodel = ct.convert(
-    #         traced_model,
-    #         convert_to="mlprogram",
-    #         inputs=[ct.TensorType(shape=x.shape)]
-    #     )
-    #     mlmodel.save("./mlmodels/plksr_96_x2.mlpackage")
+    with torch.no_grad():
+         traced_model = torch.jit.trace(model, x)
+         traced_model.save('realplksr.pt')
+         
+   
