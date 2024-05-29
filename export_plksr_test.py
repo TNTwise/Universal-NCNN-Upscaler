@@ -426,7 +426,150 @@ def convert_plk_forward_for_coreml(model):
     for m in model.modules():
         if isinstance(m, (PLKConv2d, SparsePLKConv2d)):
             m.forward = partial(pconv_forward_for_coreml, m)
+from functools import partial
 
+import torch
+from torch import nn
+from torch.nn.init import trunc_normal_
+
+
+
+upscale = 2
+training = False
+
+class realDCCM(nn.Sequential):
+    "Doubled Convolutional Channel Mixer"
+
+    def __init__(self, dim: int):
+        super().__init__(
+            nn.Conv2d(dim, dim * 2, 3, 1, 1),
+            nn.Mish(),
+            nn.Conv2d(dim * 2, dim, 3, 1, 1),
+        )
+        trunc_normal_(self[-1].weight, std=0.02)
+
+
+class realPLKConv2d(nn.Module):
+    "Partial Large Kernel Convolutional Layer"
+
+    def __init__(self, dim: int, kernel_size: int):
+        super().__init__()
+        self.conv = nn.Conv2d(dim, dim, kernel_size, 1, kernel_size // 2)
+        trunc_normal_(self.conv.weight, std=0.02)
+        self.idx = dim
+        self.training = training
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x1 = x[:, :self.idx, :, :]
+        x2 = x[:, self.idx:, :, :]
+        x1 = self.conv(x1)
+        x = torch.cat([x1, x2], dim=1)
+        return x
+
+
+class realEA(nn.Module):
+    "Element-wise Attention"
+
+    def __init__(self, dim: int):
+        super().__init__()
+        self.f = nn.Sequential(nn.Conv2d(dim, dim, 3, 1, 1), nn.Sigmoid())
+        trunc_normal_(self.f[0].weight, std=0.02)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x * self.f(x)
+
+
+class realPLKBlock(nn.Module):
+    def __init__(
+        self,
+        dim: int,
+        kernel_size: int,
+        split_ratio: float,
+        norm_groups: int,
+        use_ea: bool = True,
+    ):
+        super().__init__()
+
+        # Local Texture
+        self.channel_mixer = realDCCM(dim)
+
+        # Long-range Dependency
+        pdim = int(dim * split_ratio)
+
+        # Conv Layer
+        self.lk = realPLKConv2d(pdim, kernel_size)
+
+        # Instance-dependent modulation
+        if use_ea:
+            self.attn = realEA(dim)
+        else:
+            self.attn = nn.Identity()
+
+        # Refinement
+        self.refine = nn.Conv2d(dim, dim, 1, 1, 0)
+        trunc_normal_(self.refine.weight, std=0.02)
+
+        # Group Normalization
+        self.norm = nn.GroupNorm(norm_groups, dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_skip = x
+        x = self.channel_mixer(x)
+        x = self.lk(x)
+        x = self.attn(x)
+        x = self.refine(x)
+        x = self.norm(x)
+
+        return x + x_skip
+
+
+class realplksr(nn.Module):
+    """Partial Large Kernel CNNs for Efficient Super-Resolution:
+    https://arxiv.org/abs/2404.11848
+    """
+
+    def __init__(
+        self,
+        dim: int = 64,
+        n_blocks: int = 28,
+        upscaling_factor: int = upscale,
+        kernel_size: int = 17,
+        split_ratio: float = 0.25,
+        use_ea: bool = True,
+        norm_groups: int = 4,
+        dropout: float = 0,
+        **kwargs,
+    ):
+        super().__init__()
+
+        if not training:
+            dropout = 0
+
+        self.feats = nn.Sequential(
+            *[nn.Conv2d(3, dim, 3, 1, 1)]
+            + [
+                realPLKBlock(dim, kernel_size, split_ratio, norm_groups, use_ea)
+                for _ in range(n_blocks)
+            ]
+            + [nn.Dropout2d(dropout)]
+            + [nn.Conv2d(dim, 3 * upscaling_factor**2, 3, 1, 1)]
+        )
+        trunc_normal_(self.feats[0].weight, std=0.02)
+        trunc_normal_(self.feats[-1].weight, std=0.02)
+
+        self.repeat_op = partial(
+            repeat_interleave, n=upscaling_factor ** 2 )
+
+        self.to_img = nn.PixelShuffle(upscaling_factor)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.feats(x) + self.repeat_op(x)
+        return self.to_img(x)
+
+
+@ARCH_REGISTRY.register()
+def realplksr_s(**kwargs):
+    return realplksr(n_blocks=12, kernel_size=13, use_ea=False, **kwargs)
 
 if __name__ == '__main__':
     """ Initialize """
@@ -454,10 +597,10 @@ if __name__ == '__main__':
         'is_coreml': True,
     }
     shape = (batch_size, 3, height // upsampling_factor, width // upsampling_factor)
-    model = PLKSR(**model_kwargs)
+    model = realplksr(**model_kwargs)
     x = torch.rand(1,3,256,256)
     
-    state_dict = torch.load('PLKSR_X2_DF2K.pth')
+    state_dict = torch.load('2x_realplksr_mssim_pretrain.pth')
     model.eval()
     model.load_state_dict(state_dict['params'], strict=True)
     
@@ -466,7 +609,7 @@ if __name__ == '__main__':
             model,
             x,
             '2x_plksr.onnx',
-            opset_version=11,
+            opset_version=17,
             do_constant_folding=True,
             input_names=['data'],
             output_names=['output']
@@ -508,7 +651,6 @@ if __name__ == '__main__':
     
 
     """ measure metrics """
-    test_direct_metrics(model, shape)
     # with torch.no_grad():
     #     x = torch.FloatTensor(*shape).uniform_(0., 1.)
     #     model = model.cuda()
@@ -519,18 +661,6 @@ if __name__ == '__main__':
     # import os
 
     """ Mobile Conversion """
-    x = torch.FloatTensor(batch_size, 3, 96, 96).uniform_(0, 1).type(torch.float32).clamp(0., 1.)
-    import os
-    os.makedirs("./mlmodels", exist_ok=True)
-    model.eval()
-    model = model.cuda()
-    x = x.cuda()
-    print(x.shape)
     
-    convert_plk_forward_for_coreml(model)
-    
-    with torch.no_grad():
-         traced_model = torch.jit.trace(model, x)
-         traced_model.save('realplksr.pt')
          
    
