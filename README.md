@@ -4,6 +4,7 @@
  - ESRGAN (ESRGAN, ESRGAN+, "new-arch ESRGAN" (RealSR, BSRGAN), SPSR, and Real-ESRGAN) Models. Converted by <a href="https://github.com/chaiNNer-org/chaiNNer">chaiNNer</a>
  - Compact Models
  - SPAN Models
+ - MSDAN Models
  - All models belong to their respecitve owners under their respective licenses. Please submit an issue if you do not want your model posted here.
 ## General Models:
  - <a href="https://github.com/TNTwise/Upscaling-Models-NCNN/releases/tag/General">Download NCNN</a>
