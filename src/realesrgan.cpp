@@ -111,7 +111,9 @@ int RealESRGAN::load(const std::string &parampath, const std::string &modelpath)
     }
 #else
     net.load_param(parampath.c_str());
-    net.load_model(modelpath.c_str());
+    int result = net.load_model(modelpath.c_str());
+    if (result != 0)
+    	return result;
 #endif
 
     // initialize preprocess and postprocess pipeline
