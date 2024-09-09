@@ -803,7 +803,10 @@ int main(int argc, char **argv)
         {
             realesrgan[i] = new RealESRGAN(gpuid[i], tta_mode);
 
-            realesrgan[i]->load(paramfullpath, modelfullpath);
+            int result = realesrgan[i]->load(paramfullpath, modelfullpath);
+
+            if (result != 0)
+            	return result;
 
             realesrgan[i]->scale = scale;
             realesrgan[i]->tilesize = tilesize[i];
